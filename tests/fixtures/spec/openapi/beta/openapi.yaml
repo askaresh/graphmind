@@ -1,0 +1,10 @@
+openapi: 3.0.0
+info:
+  title: GraphMind Test Spec Beta
+  version: 1.0.0-beta
+paths:
+  /betaFeature:
+    get:
+      summary: Beta-only feature
+      tags: [beta]
+      operationId: betaFeature

@@ -1,0 +1,64 @@
+name: GraphMind — Daily Spec Refresh
+
+on:
+  schedule:
+    - cron: "0 16 * * *"   # 02:00 AEST (UTC+10) daily
+  workflow_dispatch:        # manual trigger from GitHub UI
+
+jobs:
+  refresh:
+    name: Pull latest spec + diff
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout GraphMind
+        uses: actions/checkout@v4
+
+      - name: Checkout msgraph-metadata (shallow)
+        uses: actions/checkout@v4
+        with:
+          repository: microsoftgraph/msgraph-metadata
+          path: msgraph-metadata
+          fetch-depth: 1
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install GraphMind
+        run: pip install -e .
+
+      - name: Restore manifest cache
+        uses: actions/cache@v4
+        with:
+          path: graphmind_manifest.json
+          key: graphmind-manifest-${{ runner.os }}
+          restore-keys: graphmind-manifest-
+
+      - name: Run spec refresh + diff
+        env:
+          SPEC_REPO_PATH: ./msgraph-metadata
+        run: python -m graphmind.ci_refresh
+
+      - name: Commit updated manifest + decommission log
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: daily spec refresh [skip ci]"
+          file_pattern: |
+            graphmind_manifest.json
+            graphmind_decommission_log.jsonl
+            graphmind_promotion_log.json
+
+      - name: Upload diff report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: graphmind-diff-report-${{ github.run_id }}
+          path: graphmind_diff_report.json
+          retention-days: 30
+
+      - name: Post step summary
+        run: python -m graphmind.ci_summary

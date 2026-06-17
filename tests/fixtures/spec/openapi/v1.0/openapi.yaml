@@ -1,0 +1,33 @@
+openapi: 3.0.0
+info:
+  title: GraphMind Test Spec
+  version: 1.0.0
+paths:
+  /users:
+    get:
+      summary: List users
+      tags: [users]
+      operationId: listUsers
+      security:
+        - oauth2: [User.Read.All]
+      x-ms-permissions: [User.Read.All]
+  /users/{id}:
+    get:
+      summary: Get user
+      tags: [users]
+      operationId: getUser
+  /groups:
+    get:
+      summary: List groups
+      tags: [groups]
+      operationId: listGroups
+    post:
+      summary: Create group
+      tags: [groups]
+      operationId: createGroup
+  /devices:
+    get:
+      summary: List devices
+      tags: [devices]
+      operationId: listDevices
+      deprecated: true

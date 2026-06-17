@@ -1,0 +1,49 @@
+---
+description: Always use GraphMind MCP for Microsoft Graph and Entra ID queries
+alwaysApply: true
+---
+
+# GraphMind MCP — default for Graph / Entra questions
+
+This project includes a GraphMind MCP server. **Use it automatically** for any question about Microsoft Graph, Entra ID, Azure AD, Intune, Cloud PC, M365, or tenant data — do not guess API paths from training data.
+
+## Required workflow
+
+1. **`search_graph_api`** — natural language query first (e.g. "list all users in tenant")
+2. **`get_endpoint_schema`** — if parameters are unclear
+3. **`call_graph_api`** — execute the chosen endpoint
+   - **Write actions** (POST/PATCH/PUT/DELETE — reboot, delete, assign, etc.): call once **without** `confirmed` → show preview to user → only re-call with `confirmed: true` after explicit user approval
+   - **Counts:** `GET /users/$count` (single request)
+   - **Large lists:** `paginate=true`, `aggregate=true` — auto-pages and returns `{ total, sample }`
+   - Use `$select`, `$filter`, `$top` in `query_params` to narrow results
+
+Never call Graph without searching the local index first.
+
+## Defaults
+
+- `api_version`: `v1.0` unless the user asks for beta features
+- `filter_by_permissions`: `true`
+- Auth is app-only via `.env` — no interactive login
+
+## Examples
+
+| User asks | Do this |
+|-----------|---------|
+| "How many users in Entra?" | search → `GET /users/$count` **or** `GET /users` with `paginate=true, aggregate=true` |
+| "How many Cloud PCs?" | search → `GET /deviceManagement/virtualEndpoint/cloudPCs` |
+| "Cloud PC restore points / snapshots" | search with `api_version='beta'` → resolve Cloud PC id → `GET .../cloudPCs/{id}/retrieveSnapshots()` (OData function, not `/snapshots`) |
+| "List groups" | search → appropriate groups endpoint → call |
+
+## Cloud PC / Windows 365 notes
+
+- Many Cloud PC APIs are **beta-only** — use `api_version='beta'` (GraphMind auto-selects this for Cloud PC / snapshot queries).
+- **Restore points** are listed via `retrieveSnapshots()` on a specific Cloud PC, not the tenant `/snapshots` collection.
+- OData functions use a `()` suffix in the URL path.
+
+## When building GraphMind itself
+
+Use normal codebase tools for Python/MCP development. Use GraphMind MCP tools only for **live tenant / Graph API** questions.
+
+## If MCP tools are unavailable
+
+Say so explicitly. Do not fabricate Graph API responses or endpoint paths.
