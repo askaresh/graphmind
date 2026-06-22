@@ -7,18 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-- VS Code (GitHub Copilot) MCP configuration (`.vscode/mcp.json`) and setup docs.
-- OSS hygiene: `CONTRIBUTING.md`, `SECURITY.md`, `CODE_OF_CONDUCT.md`, issue/PR
-  templates, and README badges.
-- README prerequisites, cross-platform env setup, and first-run / time-to-first-query
-  expectations.
+## [0.1.0] - 2026-06-22
 
-### Changed
-- Default `AUTH_MODE` in `.cursor/mcp.json` switched to `interactive` to match the
-  recommended dev onboarding path.
-
-## [0.1.0] - 2026-06-17
+First public release.
 
 ### Added
 - API-aware MCP server for Microsoft Graph with a 3-tier search funnel
@@ -33,6 +24,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Auth modes: interactive, client secret, and certificate (MSAL).
 - GitHub Actions for tests and daily spec refresh + diff.
 - Cursor MCP config and agent rules (`.cursor/`).
+- VS Code (GitHub Copilot) MCP configuration (`.vscode/mcp.json`) and setup docs.
+- Architecture and flow diagrams (Mermaid) in the README and docs.
+- OSS hygiene: `CONTRIBUTING.md`, `SECURITY.md`, `CODE_OF_CONDUCT.md`, issue/PR
+  templates, README badges, and a Troubleshooting guide.
+- Prerequisites, cross-platform env setup, and first-run / time-to-first-query
+  expectations in the README.
 
 [Unreleased]: https://github.com/askaresh/graphmind/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/askaresh/graphmind/releases/tag/v0.1.0

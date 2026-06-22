@@ -262,3 +262,19 @@ pip install -e ".[dev]"
 python -m pytest tests/ -v
 python -m compileall graphmind
 ```
+
+## Contributing & community
+
+Contributions are welcome. Please read:
+
+- [CONTRIBUTING.md](CONTRIBUTING.md) — dev setup, checks, branch/PR conventions
+- [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) — community expectations
+- [SECURITY.md](SECURITY.md) — how to report vulnerabilities (do not open a public issue)
+- [CHANGELOG.md](CHANGELOG.md) — notable changes per release
+
+Use the [issue templates](.github/ISSUE_TEMPLATE) for bug reports and feature requests,
+and the [pull request template](.github/PULL_REQUEST_TEMPLATE.md) when opening a PR.
+
+## License
+
+GraphMind is released under the [MIT License](LICENSE).
