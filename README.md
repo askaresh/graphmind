@@ -230,6 +230,24 @@ See `.env.example` for the full list. Key variables:
 
 After changing Entra permissions, delete the token cache and retry.
 
+## Troubleshooting
+
+| Symptom | Likely cause | Fix |
+|---|---|---|
+| First tool call hangs for minutes | Cold start — parsing ~45k endpoints + one-time ~80MB model download | Expected on first run (~4-6 min). The MCP server is responsive; the index loads in the background. Subsequent calls are instant until restart. |
+| `git ... not recognized` / spec never clones | `git` not on PATH, or no internet | Install git and ensure it's on PATH; GraphMind shells out to `git clone`. Or clone manually: `git clone https://github.com/microsoftgraph/msgraph-metadata ./msgraph-metadata` |
+| `No OpenAPI specs found under ./msgraph-metadata` | Auto-clone disabled or wrong path | Set `SPEC_AUTO_CLONE=true`, or run `graphmind bootstrap`, or point `SPEC_REPO_PATH` at an existing clone |
+| `KeyError: 'CLIENT_SECRET'` or auth fails at startup | `AUTH_MODE=client_secret`/`certificate` without the matching value | Set `CLIENT_SECRET` / `CERT_PATH`, or use `AUTH_MODE=interactive` for local dev (no secret needed) |
+| `AADSTS65001` / consent or `403 Forbidden` on calls | App lacks the permission, or admin consent not granted | Add the permission in Entra and click **Grant admin consent** (see [docs/entra_setup.md](docs/entra_setup.md)). Then delete `.graphmind_token_cache.json` and retry |
+| Calls still 403 after adding permissions | Stale cached token without new claims | Delete `.graphmind_token_cache.json` so MSAL acquires a fresh token |
+| `404 Not Found` on a beta path | Endpoint is v1.0-only, or path is wrong | Retry with `api_version='v1.0'`, or run `search_graph_api` again — 404s suggest related endpoints from the local index |
+| `pip install` fails on `numpy`/`torch` | Resolver conflict or unsupported Python | Use **Python 3.11+** in a clean virtualenv. `numpy` is pinned `<2` for `sentence-transformers` compatibility |
+| `search_graph_api` returns no results | Filters too narrow | Broaden the query, drop `tags`/`method`, or set `api_version='both'` |
+| MCP server not appearing in the client | Wrong `cwd` or command | Ensure the client launches from the repo root (`cwd`) so relative paths (`./msgraph-metadata`, `.env`) resolve; verify `python -m graphmind.mcp.server` runs from that directory |
+
+For a quick non-MCP sanity check, run `graphmind stats` (loads the index) and
+`graphmind search "list all users"` (exercises the funnel) from the repo root.
+
 ## GitHub Actions
 
 - **`.github/workflows/test.yml`** — runs on push/PR: compileall + pytest
