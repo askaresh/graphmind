@@ -2,13 +2,15 @@ from __future__ import annotations
 
 import os
 import subprocess
+import sys
 from pathlib import Path
 
 from rich.console import Console
 
 from .loader import SPEC_PATHS
 
-console = Console()
+# MCP stdio owns stdout. Clone progress must stay on stderr.
+console = Console(stderr=True)
 DEFAULT_REPO_URL = "https://github.com/microsoftgraph/msgraph-metadata.git"
 
 
@@ -39,7 +41,12 @@ def ensure_spec_repo(repo_path: str) -> Path:
 
     if (path / ".git").is_dir():
         console.print("[cyan]Spec repo present but OpenAPI files missing — pulling latest...[/cyan]")
-        subprocess.run(["git", "pull", "--ff-only"], cwd=path, check=True)
+        subprocess.run(
+            ["git", "pull", "--ff-only"],
+            cwd=path,
+            check=True,
+            stdout=sys.stderr,
+        )
         if spec_files_present(path):
             return path.resolve()
 
@@ -50,7 +57,11 @@ def ensure_spec_repo(repo_path: str) -> Path:
 
     path.parent.mkdir(parents=True, exist_ok=True)
     console.print(f"[cyan]Cloning {url} -> {path} (shallow)...[/cyan]")
-    subprocess.run(["git", "clone", "--depth", "1", url, str(path)], check=True)
+    subprocess.run(
+        ["git", "clone", "--depth", "1", url, str(path)],
+        check=True,
+        stdout=sys.stderr,
+    )
 
     if not spec_files_present(path):
         raise FileNotFoundError(f"Clone completed but OpenAPI files not found under {path}.")

@@ -4,7 +4,9 @@ Optional dev helpers that call Graph directly (bypass MCP search and write confi
 
 ## In this repo (`scripts/`)
 
-Generic scripts — work with any tenant configured in `.env`:
+Generic scripts — work with any tenant configured in `.env`.
+
+They force `AUTH_MODE=client_secret` after loading `.env`. Set `CLIENT_SECRET` (see [docs/entra_setup.md](../docs/entra_setup.md), Mode B). Interactive sign-in is enough for the MCP server and is not enough for these scripts.
 
 | Script | Purpose |
 |---|---|

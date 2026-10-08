@@ -12,7 +12,7 @@ and configuring the right permissions for your use case.
 3. Fill in:
    - **Name:** `GraphMind` (or any name you prefer)
    - **Supported account types:** `Accounts in this organizational directory only`
-   - **Redirect URI:** leave blank (not needed for app-only or interactive flows)
+   - **Redirect URI:** leave blank here. Interactive mode adds `http://localhost` in the next section. App-only modes do not need a redirect.
 4. Click **Register**
 5. Copy the following from the **Overview** page into your `.env`:
    - **Application (client) ID** → `CLIENT_ID`
@@ -36,8 +36,9 @@ CLIENT_ID=<your-client-id>
 TENANT_ID=<your-tenant-id>
 ```
 
-In the app registration → **Authentication** → Add platform → **Mobile and desktop**
-→ tick `https://login.microsoftonline.com/common/oauth2/nativeclient`
+In the app registration → **Authentication** → **Add a platform** → **Mobile and desktop applications** → add redirect URI `http://localhost`.
+
+GraphMind uses MSAL's interactive flow, which listens on `http://localhost`. Registering only `https://login.microsoftonline.com/common/oauth2/nativeclient` produces a redirect mismatch (`AADSTS50011`). Adding the mobile and desktop platform also enables public client flows, which this mode requires.
 
 ---
 
@@ -145,15 +146,17 @@ After adding permissions:
 ## 4. Verify the Setup
 
 ```bash
-# Check GraphMind can authenticate and load the index
-graphmind stats
+# Check GraphMind can load the index (no sign-in yet)
+python -m graphmind.cli stats
 
 # Run a quick search (no write permissions needed)
-graphmind search "list all users in the tenant"
+python -m graphmind.cli search "list all users in the tenant"
 
-# If auth works and results appear, you're ready to start the MCP server
-graphmind serve
+# If results appear, start the MCP server
+python -m graphmind.cli serve
 ```
+
+`python -m graphmind.cli stats` does not sign in. The first `call_graph_api` from the MCP server opens the browser (interactive) or uses the client secret. Scripts under `scripts/` always use the client secret.
 
 ---
 

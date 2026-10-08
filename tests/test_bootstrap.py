@@ -1,4 +1,5 @@
 import subprocess
+import sys
 from pathlib import Path
 from unittest.mock import patch
 
@@ -43,6 +44,28 @@ def test_ensure_spec_repo_clones_when_missing(mock_run, tmp_path, monkeypatch):
     assert result == target.resolve()
     mock_run.assert_called_once()
     assert mock_run.call_args.args[0][:2] == ["git", "clone"]
+    assert mock_run.call_args.kwargs["stdout"] is sys.stderr
+
+
+@patch("graphmind.spec.bootstrap.subprocess.run")
+def test_clone_progress_goes_to_stderr(mock_run, tmp_path, monkeypatch, capsys):
+    target = tmp_path / "msgraph-metadata"
+
+    def fake_clone(args, **kwargs):
+        target.mkdir(parents=True)
+        for rel in ("openapi/v1.0/openapi.yaml", "openapi/beta/openapi.yaml"):
+            spec_file = target / rel
+            spec_file.parent.mkdir(parents=True, exist_ok=True)
+            spec_file.write_text("paths: {}\n", encoding="utf-8")
+        return subprocess.CompletedProcess(args, 0)
+
+    mock_run.side_effect = fake_clone
+    monkeypatch.setenv("SPEC_AUTO_CLONE", "true")
+
+    ensure_spec_repo(str(target))
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "Cloning" in captured.err
 
 
 @patch("graphmind.spec.bootstrap.subprocess.run")

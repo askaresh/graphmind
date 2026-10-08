@@ -47,31 +47,45 @@ before execution.
 
 ## Prerequisites
 
-- **Python 3.11+** and **git** on your PATH
+- **Python 3.11+** and **git** on your PATH. CI tests Python 3.11.
+- Internet access. The install downloads PyTorch via `sentence-transformers` (often 1 GB or more), the first run clones `msgraph-metadata`, and the first search downloads an ~80MB reranker model.
 - A **Microsoft Entra tenant** with an **app registration** (see [docs/entra_setup.md](docs/entra_setup.md))
 
 ## Quick Start
 
 ```bash
-# 1. Install
+git clone https://github.com/askaresh/graphmind.git
+cd graphmind
+
+python -m venv .venv
+
+# Windows PowerShell
+.venv\Scripts\Activate.ps1
+# Windows cmd
+.venv\Scripts\activate.bat
+# macOS / Linux
+source .venv/bin/activate
+
 pip install -e ".[dev]"
 
-# 2. Configure — copy the example env, then fill in TENANT_ID, CLIENT_ID, AUTH_MODE
-cp .env.example .env       # macOS / Linux
+# Configure — copy the example env, then fill in TENANT_ID, CLIENT_ID, AUTH_MODE
 copy .env.example .env     # Windows (PowerShell / cmd)
+cp .env.example .env       # macOS / Linux
 
-# 3. Verify (auto-clones msgraph-metadata on first run)
-graphmind stats
+# Verify (auto-clones msgraph-metadata on first run)
+python -m graphmind.cli stats
 
-# 4. Start MCP server
-graphmind serve
+# Start MCP server
+python -m graphmind.cli serve
 ```
+
+Use that activated virtual environment for every later command. After activation, `graphmind stats` works as well. If PowerShell blocks the activate script, call the venv interpreter directly: `.venv\Scripts\python.exe -m graphmind.cli stats` (macOS / Linux: `.venv/bin/python -m graphmind.cli stats`).
+
+`AUTH_MODE` and credentials are read from `.env`. See [docs/entra_setup.md](docs/entra_setup.md) for app registration and permissions.
 
 The spec repo is cloned to `./msgraph-metadata` automatically when missing.
 See [docs/spec_lifecycle.md](docs/spec_lifecycle.md) for the full lifecycle and
 recommended CI workflow.
-
-See [docs/entra_setup.md](docs/entra_setup.md) for Entra app registration and permissions.
 
 ### What to expect on first run
 
@@ -89,7 +103,7 @@ are unavoidable, plan for **~10–15 minutes** before your first live Graph call
 
 ### Cursor MCP setup
 
-This repo includes `.cursor/mcp.json`. Credentials stay in `.env` (not in MCP config):
+This repo includes `.cursor/mcp.json`. Credentials and `AUTH_MODE` stay in `.env` (not in MCP config):
 
 ```json
 {
@@ -100,13 +114,17 @@ This repo includes `.cursor/mcp.json`. Credentials stay in `.env` (not in MCP co
       "cwd": "${workspaceFolder}",
       "env": {
         "SPEC_REPO_PATH": "./msgraph-metadata",
-        "AUTH_MODE": "interactive",
-        "DEFAULT_API_VERSION": "v1.0"
+        "DEFAULT_API_VERSION": "v1.0",
+        "RERANKER_TOP_K": "20"
       }
     }
   }
 }
 ```
+
+`command` must be the same interpreter you installed into. With the Quick Start venv, set it to `${workspaceFolder}/.venv/Scripts/python.exe` on Windows, or `${workspaceFolder}/.venv/bin/python` on macOS / Linux. A bare `python` only works when that `python` on PATH is the one that received `pip install -e ".[dev]"`.
+
+Keys in the MCP `env` block override the same keys in `.env`. Leave `AUTH_MODE`, `TENANT_ID`, `CLIENT_ID`, and secrets out of this block.
 
 Enable GraphMind under **Cursor Settings → MCP**. The index loads in the background
 on the first tool call (~4–6 minutes cold; instant once warm). See
@@ -118,7 +136,7 @@ Agent behaviour for Graph queries is defined in `.cursor/rules/graphmind-mcp.mdc
 
 This repo includes `.vscode/mcp.json`, which VS Code picks up automatically when you
 open the folder. It uses VS Code's MCP schema (`servers` + `"type": "stdio"`).
-Credentials stay in `.env` (not in the MCP config):
+Credentials and `AUTH_MODE` stay in `.env` (not in the MCP config):
 
 ```json
 {
@@ -130,20 +148,22 @@ Credentials stay in `.env` (not in the MCP config):
       "cwd": "${workspaceFolder}",
       "env": {
         "SPEC_REPO_PATH": "./msgraph-metadata",
-        "AUTH_MODE": "interactive",
-        "DEFAULT_API_VERSION": "v1.0"
+        "DEFAULT_API_VERSION": "v1.0",
+        "RERANKER_TOP_K": "20"
       }
     }
   }
 }
 ```
 
+Use the same venv interpreter for `command` as in the Cursor section above. MCP `env` values override `.env`.
+
 Requires **GitHub Copilot agent mode** (`Chat: Agent` view). Open the Chat view, switch
 to **Agent**, then **Start** the `graphmind` server from the MCP tools picker. As with
 Cursor, the index loads in the background on the first tool call (~4–6 minutes cold).
 
-Any other MCP-capable client works too — point it at the stdio command
-`python -m graphmind.mcp.server` run from the repo root.
+Any other MCP-capable client works too. From the repo root, run
+`python -m graphmind.mcp.server` with the venv interpreter.
 
 ## MCP tools
 
@@ -210,7 +230,7 @@ See [`scripts/README.md`](scripts/README.md) for details.
 
 Tenant-specific scripts belong in `scripts/local/` (gitignored, not on GitHub).
 
-Run from repo root: `python scripts/count_users.py`
+Run from repo root, with the venv activated: `python scripts/count_users.py`. These scripts force `AUTH_MODE=client_secret` and need `CLIENT_SECRET` in `.env`. Interactive mode is enough for the MCP server and is not enough for these scripts.
 
 ## Configuration
 
@@ -236,17 +256,20 @@ After changing Entra permissions, delete the token cache and retry.
 |---|---|---|
 | First tool call hangs for minutes | Cold start — parsing ~45k endpoints + one-time ~80MB model download | Expected on first run (~4-6 min). The MCP server is responsive; the index loads in the background. Subsequent calls are instant until restart. |
 | `git ... not recognized` / spec never clones | `git` not on PATH, or no internet | Install git and ensure it's on PATH; GraphMind shells out to `git clone`. Or clone manually: `git clone https://github.com/microsoftgraph/msgraph-metadata ./msgraph-metadata` |
+| `graphmind` is not recognized | The venv is not activated, or its `Scripts` folder is not on PATH | Activate `.venv`, or run `python -m graphmind.cli stats` with that venv's Python |
+| `AADSTS50011` redirect URI mismatch | Interactive app registration is missing `http://localhost` | Add it under **Authentication → Mobile and desktop applications** (see [docs/entra_setup.md](docs/entra_setup.md)) |
 | `No OpenAPI specs found under ./msgraph-metadata` | Auto-clone disabled or wrong path | Set `SPEC_AUTO_CLONE=true`, or run `graphmind bootstrap`, or point `SPEC_REPO_PATH` at an existing clone |
 | `KeyError: 'CLIENT_SECRET'` or auth fails at startup | `AUTH_MODE=client_secret`/`certificate` without the matching value | Set `CLIENT_SECRET` / `CERT_PATH`, or use `AUTH_MODE=interactive` for local dev (no secret needed) |
 | `AADSTS65001` / consent or `403 Forbidden` on calls | App lacks the permission, or admin consent not granted | Add the permission in Entra and click **Grant admin consent** (see [docs/entra_setup.md](docs/entra_setup.md)). Then delete `.graphmind_token_cache.json` and retry |
 | Calls still 403 after adding permissions | Stale cached token without new claims | Delete `.graphmind_token_cache.json` so MSAL acquires a fresh token |
 | `404 Not Found` on a beta path | Endpoint is v1.0-only, or path is wrong | Retry with `api_version='v1.0'`, or run `search_graph_api` again — 404s suggest related endpoints from the local index |
 | `pip install` fails on `numpy`/`torch` | Resolver conflict or unsupported Python | Use **Python 3.11+** in a clean virtualenv. `numpy` is pinned `<2` for `sentence-transformers` compatibility |
+| `Server` has no attribute `list_tools` | MCP 2.x was installed | Reinstall from this repo. GraphMind requires **MCP 1.x** (`mcp>=1.27.1,<2`) |
 | `search_graph_api` returns no results | Filters too narrow | Broaden the query, drop `tags`/`method`, or set `api_version='both'` |
-| MCP server not appearing in the client | Wrong `cwd` or command | Ensure the client launches from the repo root (`cwd`) so relative paths (`./msgraph-metadata`, `.env`) resolve; verify `python -m graphmind.mcp.server` runs from that directory |
+| MCP server not appearing in the client | Wrong `cwd` or command | Launch from the repo root (`cwd`) so `./msgraph-metadata` and `.env` resolve. Set `command` to the venv interpreter, then verify `python -m graphmind.mcp.server` runs with that same Python |
 
-For a quick non-MCP sanity check, run `graphmind stats` (loads the index) and
-`graphmind search "list all users"` (exercises the funnel) from the repo root.
+For a quick non-MCP sanity check, run `python -m graphmind.cli stats` (loads the index) and
+`python -m graphmind.cli search "list all users"` (exercises the funnel) from the repo root.
 
 ## GitHub Actions
 
@@ -256,6 +279,8 @@ For a quick non-MCP sanity check, run `graphmind stats` (loads the index) and
   No auth secrets required for the spec refresh job.
 
 ## Development
+
+From the activated Quick Start virtual environment:
 
 ```bash
 pip install -e ".[dev]"

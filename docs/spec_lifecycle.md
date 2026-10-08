@@ -12,14 +12,15 @@ This document describes where that spec lives and how to keep it in sync.
 |---|---|---|
 | OpenAPI YAML (source of truth for search) | `./msgraph-metadata/` locally | No (gitignored) |
 | Endpoint manifest (diff baseline) | `./graphmind_manifest.json` | Yes (updated by CI) |
-| Decommission log | `./graphmind_decommission_log.jsonl` | Yes (updated by CI) |
+| Decommission log | `./graphmind_decommission_log.jsonl` | Yes, after the first removal is logged (updated by CI) |
 | Promotion log (beta → v1.0) | `./graphmind_promotion_log.json` | Yes (updated by CI) |
 | In-memory search index | RAM at `graphmind serve` startup | No |
 
-> Note: `graphmind_manifest.json` and `graphmind_decommission_log.jsonl` are **created on
-> the first `graphmind refresh` or CI refresh run** — they are not present in a fresh
-> clone. The `get_changelog` MCP tool handles their absence gracefully and tells you to
-> run `graphmind refresh`.
+> Note: `graphmind_manifest.json` and `graphmind_promotion_log.json` are already in a
+> fresh clone. `graphmind_decommission_log.jsonl` is created on the first `graphmind refresh`
+> or CI refresh that records a removal, then committed by CI. Until that file exists,
+> `get_changelog` reports that there is no decommission log yet and tells you to run
+> `graphmind refresh`.
 
 ---
 

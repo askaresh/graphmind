@@ -6,7 +6,6 @@
       "cwd": "${workspaceFolder}",
       "env": {
         "SPEC_REPO_PATH": "./msgraph-metadata",
-        "AUTH_MODE": "interactive",
         "DEFAULT_API_VERSION": "v1.0",
         "RERANKER_TOP_K": "20"
       }

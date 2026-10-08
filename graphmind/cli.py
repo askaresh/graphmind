@@ -96,3 +96,7 @@ def search(query, version, method, top):
         label = "v1.0" if ep.api_version == "v1.0" else "beta"
         console.print(f"  [{label}]  [cyan]{ep.method}[/cyan] {ep.path}")
         console.print(f"     [dim]{ep.summary}[/dim]\n")
+
+
+if __name__ == "__main__":
+    cli()

@@ -8,17 +8,22 @@ development workflow, and conventions for pull requests.
 GraphMind requires **Python 3.11+** and **git**.
 
 ```bash
-# Clone and install with dev dependencies
 git clone https://github.com/askaresh/graphmind.git
 cd graphmind
+python -m venv .venv
+
+# Windows PowerShell: .venv\Scripts\Activate.ps1
+# Windows cmd: .venv\Scripts\activate.bat
+# macOS / Linux: source .venv/bin/activate
+
 pip install -e ".[dev]"
 
 # Copy the example env and fill in your Entra app details
-cp .env.example .env       # macOS / Linux
 copy .env.example .env     # Windows
+cp .env.example .env       # macOS / Linux
 ```
 
-See [docs/entra_setup.md](docs/entra_setup.md) for app registration and permissions.
+See the [README Quick Start](README.md#quick-start) for the venv interpreter the MCP client must launch, and [docs/entra_setup.md](docs/entra_setup.md) for app registration and permissions. Interactive sign-in needs the redirect URI `http://localhost`.
 
 ## Running checks
 
